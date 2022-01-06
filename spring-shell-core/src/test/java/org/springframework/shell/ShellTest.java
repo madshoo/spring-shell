@@ -19,7 +19,9 @@ package org.springframework.shell;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +58,9 @@ public class ShellTest {
 
 	@Mock
 	private ParameterResolver parameterResolver;
+
+	@Mock
+	private CommandRegistry commandRegistry;
 
 	private ValueResult valueResult;
 
@@ -184,15 +189,22 @@ public class ShellTest {
 		}).isInstanceOf(ParameterResolverMissingException.class);
 	}
 
-	// @Test
+	@Test
 	public void commandNameCompletion() throws Exception {
 		shell.applicationContext = mock(ApplicationContext.class);
 		when(parameterResolver.supports(any())).thenReturn(true);
-		when(shell.applicationContext.getBeansOfType(MethodTargetRegistrar.class))
-				.thenReturn(Collections.singletonMap("foo", r -> {
-					r.register("hello world", MethodTarget.of("helloWorld", this, new Command.Help("hellow world")));
-					r.register("another command", MethodTarget.of("helloWorld", this, new Command.Help("another command")));
-				}));
+
+		Map<String, MethodTarget> commands = new HashMap<>();
+		commands.put("hello world", MethodTarget.of("helloWorld", this, new Command.Help("hellow world")));
+		commands.put("another command", MethodTarget.of("helloWorld", this, new Command.Help("another command")));
+
+//		when(shell.applicationContext.getBeansOfType(MethodTargetRegistrar.class))
+//				.thenReturn(Collections.singletonMap("foo", r -> {
+//					r.register("hello world", MethodTarget.of("helloWorld", this, new Command.Help("hellow world")));
+//					r.register("another command", MethodTarget.of("helloWorld", this, new Command.Help("another command")));
+//				}));
+		when(commandRegistry.listCommands())
+				.thenReturn(commands);
 		shell.gatherMethodTargets();
 
 		// Invoke at very start
